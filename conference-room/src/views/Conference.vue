@@ -8,17 +8,14 @@
     <!-- 搜索区域 -->
     <div class="search-area">
       <el-form :inline="true" :model="searchForm" class="demo-form-inline">
-        <el-form-item label="预约时间">
-          <el-date-picker
-            v-model="searchForm.time"
-            type="date"
-            placeholder="请选择预约日期"
-            format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD"
-          />
+        <el-form-item label="模糊搜索">
+          <el-input v-model="searchForm.keyword" placeholder="请输入关键词" />
         </el-form-item>
-        <el-form-item label="会议室房间号">
-          <el-input v-model="searchForm.roomNumber" placeholder="请输入预约室房间号" />
+        <el-form-item label="最小容量">
+          <el-input-number v-model="searchForm.minCapacity" :min="0" placeholder="请输入最小容量" />
+        </el-form-item>
+        <el-form-item label="位置">
+          <el-input v-model="searchForm.location" placeholder="请输入位置" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="onSearch">搜索</el-button>
@@ -76,6 +73,7 @@ import { ref, onMounted, nextTick, getCurrentInstance } from 'vue'
 import roomImage from '@/assets/images/exam.png'
 import ConferenceInfoPop from '@/views/pop/ConferenceInfoPop.vue'
 import AddAppointmentPop from '@/views/pop/AddAppointmentPop.vue'
+import { getRoomPage } from '@/api/room.js'
 
 export default {
   name: 'Conference',
@@ -93,8 +91,9 @@ export default {
     
     // 搜索表单数据
     const searchForm = ref({
-      time: '',
-      roomNumber: ''
+      keyword: '',
+      minCapacity: null,
+      location: ''
     })
 
     // 分页数据
@@ -117,13 +116,31 @@ export default {
     // 方法
     const onSearch = () => {
       console.log('搜索:', searchForm.value)
-      // 这里可以添加实际的搜索逻辑
+      // 调用API进行搜索
+      getRoomPage(
+        currentPage.value,
+        pageSize.value,
+        searchForm.value.keyword || null,
+        null, // status参数暂不使用
+        searchForm.value.minCapacity || null,
+        searchForm.value.location || null
+      ).then(response => {
+        console.log('搜索结果:', response)
+        // 更新会议室数据
+        // rooms.value = response.data.items
+        // totalRooms.value = response.data.total
+      }).catch(error => {
+        console.error('搜索失败:', error)
+      })
     }
 
     const onReset = () => {
-      searchForm.value.time = ''
-      searchForm.value.roomNumber = ''
+      searchForm.value.keyword = ''
+      searchForm.value.minCapacity = null
+      searchForm.value.location = ''
       console.log('重置搜索条件')
+      // 重置后重新加载数据
+      onSearch()
     }
 
     const viewDetails = (room) => {
