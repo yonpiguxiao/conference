@@ -7,16 +7,19 @@
   >
     <!-- 会议室基本信息 -->
     <div class="room-details">
-      <!-- <h3>会议室详情字段</h3> -->
       <el-descriptions :column="1" border>
-        <el-descriptions-item label="会议室房间号">{{ roomData.number }}</el-descriptions-item>
-        <el-descriptions-item label="地址">{{ roomData.address || '北京市朝阳区某某大厦' }}</el-descriptions-item>
+        <el-descriptions-item label="会议室名称">{{ roomData.name }}</el-descriptions-item>
+        <el-descriptions-item label="会议室房间号">{{ roomData.roomNumber }}</el-descriptions-item>
+        <el-descriptions-item label="容量（人数）">{{ roomData.capacity }}</el-descriptions-item>
+        <el-descriptions-item label="面积">{{ roomData.areaSqm }} 平方米</el-descriptions-item>
+        <el-descriptions-item label="目的">{{ roomData.purpose }}</el-descriptions-item>
+        <el-descriptions-item label="描述">{{ roomData.description }}</el-descriptions-item>
         <el-descriptions-item label="会议室照片">
           <el-image
             style="width: 100px; height: 100px"
-            :src="roomImage"
+            :src="roomData.url"
             fit="cover"
-            :preview-src-list="[roomImage]"
+            :preview-src-list="[roomData.url]"
           />
         </el-descriptions-item>
       </el-descriptions>
@@ -83,7 +86,6 @@
 
 <script>
 import { ref } from 'vue'
-import roomImage from '@/assets/images/exam.png'
 import { ElMessage } from 'element-plus'
 
 export default {
@@ -93,11 +95,7 @@ export default {
     const visible = ref(false)
     
     // 会议室数据
-    const roomData = ref({
-      id: 1,
-      number: 'A101',
-      address: '北京市朝阳区某某大厦'
-    })
+    const roomData = ref({})
     
     // 时间选择表单
     const timeForm = ref({
@@ -161,7 +159,6 @@ export default {
       roomData,
       timeForm,
       reservationStatus,
-      roomImage,
       show,
       handleClose,
       checkReservationStatus

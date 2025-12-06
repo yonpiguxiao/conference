@@ -74,7 +74,7 @@ import { ref, onMounted, nextTick, getCurrentInstance } from 'vue'
 import roomImage from '@/assets/images/exam.png'
 import ConferenceInfoPop from '@/views/pop/ConferenceInfoPop.vue'
 import AddAppointmentPop from '@/views/pop/AddAppointmentPop.vue'
-import { getRoomPage } from '@/api/room.js'
+import { getRoomPage, getRoomById } from '@/api/room.js'
 
 export default {
   name: 'Conference',
@@ -137,13 +137,36 @@ export default {
 
     const viewDetails = (room) => {
       console.log('查看会议室详情:', room)
-      // 显示弹窗
-      // 确保引用存在且有show方法
-      if (conferenceInfoPop.value && typeof conferenceInfoPop.value.show === 'function') {
-        conferenceInfoPop.value.show(room)
-      } else {
-        console.error('无法调用show方法:', conferenceInfoPop.value)
-      }
+      // 调用API获取最新的会议室详情
+      getRoomById(room.id).then(response => {
+        console.log('会议室详情响应:', response)
+        // 检查响应数据结构
+        if (response && response.data && response.data.list && response.data.list.length > 0) {
+          // 显示弹窗
+          // 确保引用存在且有show方法
+          if (conferenceInfoPop.value && typeof conferenceInfoPop.value.show === 'function') {
+            conferenceInfoPop.value.show(response.data.list[0])
+          } else {
+            console.error('无法调用show方法:', conferenceInfoPop.value)
+          }
+        } else {
+          console.error('响应数据结构不符合预期:', response)
+          // 使用原始数据
+          if (conferenceInfoPop.value && typeof conferenceInfoPop.value.show === 'function') {
+            conferenceInfoPop.value.show(room)
+          } else {
+            console.error('无法调用show方法:', conferenceInfoPop.value)
+          }
+        }
+      }).catch(error => {
+        console.error('获取会议室详情失败:', error)
+        // 即使获取详情失败，也显示弹窗，使用原始数据
+        if (conferenceInfoPop.value && typeof conferenceInfoPop.value.show === 'function') {
+          conferenceInfoPop.value.show(room)
+        } else {
+          console.error('无法调用show方法:', conferenceInfoPop.value)
+        }
+      })
     }
 
     const reserveRoom = (room) => {
