@@ -74,13 +74,15 @@ import { ref, onMounted, nextTick, getCurrentInstance } from 'vue'
 import roomImage from '@/assets/images/exam.png'
 import ConferenceInfoPop from '@/views/pop/ConferenceInfoPop.vue'
 import AddAppointmentPop from '@/views/pop/AddAppointmentPop.vue'
+import AppointmentInfoPop from '@/views/pop/AppointmentInfoPop.vue'
 import { getRoomPage, getRoomById } from '@/api/room.js'
 
 export default {
   name: 'Conference',
   components: {
     ConferenceInfoPop,
-    AddAppointmentPop
+    AddAppointmentPop,
+    AppointmentInfoPop
   },
   setup() {
     // 获取当前实例
@@ -171,12 +173,12 @@ export default {
 
     const reserveRoom = (room) => {
       console.log('预约会议室:', room)
-      // 显示预约弹窗
+      // 显示预约弹窗，并传递roomId
       nextTick(() => {
         if (addAppointmentPop.value && typeof addAppointmentPop.value.show === 'function') {
-          addAppointmentPop.value.show()
+          addAppointmentPop.value.show(room.id)
         } else if (instance.refs.addAppointmentPop && typeof instance.refs.addAppointmentPop.show === 'function') {
-          instance.refs.addAppointmentPop.show()
+          instance.refs.addAppointmentPop.show(room.id)
         } else {
           console.error('无法调用预约弹窗的show方法:', addAppointmentPop.value)
         }

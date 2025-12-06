@@ -3,131 +3,172 @@
     <div class="header">
       <h1>个人预约列表</h1>
     </div>
-    <div class="appointment-list">
-      <div 
-        v-for="appointment in appointments" 
-        :key="appointment.id" 
-        class="appointment-item"
-      >
+    <div class="appointment-list" v-loading="loading">
+      <div v-for="appointment in appointments" :key="appointment.id" class="appointment-item" >
         <div class="room-info">
           {{ appointment.roomName }}
-          <span class="status-tag" :class="getStatusClass(appointment.status)">{{ appointment.status }}</span>
+          <span class="status-tag" :class="getStatusClass(appointment.status)">{{ getStatusText(appointment.status) }}</span>
         </div>
         <div class="time-info">
-          <span>{{ formatDateTime(appointment.date, appointment.timeSlot) }}</span>
-          <button 
-            v-if="isFutureAppointment(appointment.date, appointment.timeSlot)" 
-            class="cancel-btn"
-            @click="cancelAppointment(appointment.id)"
-          >
-            取消预约
-          </button>
+          <span>{{ appointment.startTime }} 至 {{ appointment.endTime }}</span>
+          <div class="actions">
+            <button class="detail-btn" @click="showDetail(appointment.id)">详情</button>
+            <button v-if="canCancel(appointment.status)" class="cancel-btn" @click="cancelAppointment(appointment.id)"
+            >
+              取消预约
+            </button>
+          </div>
         </div>
       </div>
-      
       <!-- 当没有预约时显示 -->
-      <div v-if="appointments.length === 0" class="no-appointments">
+      <div v-if="appointments.length === 0 && !loading" class="no-appointments">
         暂无预约记录
       </div>
     </div>
+    
+    <!-- 预约详情弹窗 -->
+    <AppointmentInfoPop 
+      v-model:visible="detailVisible" 
+      :appointment-id="currentAppointmentId"
+      @success="handleDetailSuccess"
+    />
   </div>
 </template>
 
 <script>
+import { getCurrentUser } from '@/api/user.js'
+import { getAppointmentList } from '@/api/appointment.js'
+import { formatDateTime } from '@/utils/date.js'
+import AppointmentInfoPop from '@/views/pop/AppointmentInfoPop.vue'
+
 export default {
   name: 'PersonalAppointment',
+  components: {
+    AppointmentInfoPop
+  },
   data() {
     return {
-      // 模拟预约数据
-      appointments: [
-        {
-          id: 1,
-          roomName: '会议室A',
-          date: '2025-10-26',
-          timeSlot: '09:00-10:00',
-          status: '已通过'
-        },
-        {
-          id: 2,
-          roomName: '会议室B',
-          date: '2025-10-25',
-          timeSlot: '14:00-15:00',
-          status: '审批中'
-        },
-        {
-          id: 3,
-          roomName: '会议室C',
-          date: '2025-10-27',
-          timeSlot: '11:00-12:00',
-          status: '未通过'
-        },
-        {
-          id: 4,
-          roomName: '会议室D',
-          date: '2025-10-24',
-          timeSlot: '09:00-11:00',
-          status: '已过期'
-        }
-      ]
+      appointments: [],
+      loading: false,
+      userId: null,
+      detailVisible: false,
+      currentAppointmentId: null
     }
   },
+  async mounted() {
+    await this.fetchUserInfo()
+  },
   methods: {
-    /**
-     * 判断是否为未来的预约
-     * @param {string} date - 预约日期 'YYYY-MM-DD'
-     * @param {string} timeSlot - 时间段 'HH:MM-HH:MM'
+    /** 
+     * 获取用户信息
+     */
+    async fetchUserInfo() {
+      try {
+        const res = await getCurrentUser()
+        if (res.code === 0) {
+          this.userId = res.data.id
+          // 获取用户预约列表
+          await this.fetchAppointments()
+        }
+      } catch (error) {
+        console.error('获取用户信息失败:', error)
+      }
+    },
+    /** 
+     * 获取预约列表
+     */
+    async fetchAppointments() {
+      if (!this.userId) return
+      
+      this.loading = true
+      try {
+        const params = {
+          userId: this.userId,
+          page: 1,
+          pageSize: 20
+        }
+        
+        const res = await getAppointmentList(params)
+        
+        if (res.code === 0) {
+          this.appointments = res.data.list.map(item => ({
+            ...item,
+            startTime: formatDateTime(item.startsAt),
+            endTime: formatDateTime(item.endsAt)
+          }))
+          console.log('预约列表:', this.appointments)
+        }
+      } catch (error) {
+        console.error('获取预约列表失败:', error)
+      } finally {
+        this.loading = false
+      }
+    },
+    /** 
+     * 判断是否可以取消预约
+     * @param {string} status - 预约状态
      * @returns {boolean}
      */
-    isFutureAppointment(date, timeSlot) {
-      // 解析时间段获取结束时间
-      const endTime = timeSlot.split('-')[1];
-      const [endHour, endMinute] = endTime.split(':').map(Number);
-      
-      // 创建预约结束时间对象
-      const [year, month, day] = date.split('-').map(Number);
-      const appointmentEndDate = new Date(year, month - 1, day, endHour, endMinute);
-      
-      // 获取当前时间
-      const now = new Date();
-      
-      // 比较时间
-      return appointmentEndDate > now;
+    canCancel(status) {
+      return status === 'pending' || status === 'approved'
     },
-    
-    /**
-     * 格式化日期时间显示
-     * @param {string} date - 'YYYY-MM-DD'
-     * @param {string} timeSlot - 'HH:MM-HH:MM'
-     * @returns {string} - 'YYYY年MM月DD日 HH:MM-HH:MM'
-     */
-    formatDateTime(date, timeSlot) {
-      // 解析日期
-      const [year, month, day] = date.split('-');
-      
-      return `${year}年${month}月${day}日 ${timeSlot}`;
-    },
-    
-    /**
+    /** 
      * 获取状态标签的样式类
      * @param {string} status - 预约状态
      * @returns {string} - 样式类名
      */
     getStatusClass(status) {
       switch (status) {
-        case '已通过':
-          return 'status-approved';
-        case '审批中':
+        case 'pending':
           return 'status-pending';
-        case '未通过':
+        case 'approved':
+          return 'status-approved';
+        case 'rejected':
           return 'status-rejected';
-        case '已过期':
-          return 'status-expired';
+        case 'canceled':
+          return 'status-canceled';
+        case 'checked_in':
+          return 'status-checked-in';
+        case 'completed':
+          return 'status-completed';
         default:
           return '';
       }
     },
-
-    /**
+    /** 
+     * 获取状态文本
+     * @param {string} status - 预约状态
+     * @returns {string} - 状态文本
+     */
+    getStatusText(status) {
+      const statusMap = {
+        pending: '审批中',
+        approved: '审批通过',
+        rejected: '审批失败',
+        canceled: '已取消',
+        checked_in: '已签到',
+        completed: '已完成'
+      }
+      return statusMap[status] || status
+    },
+    /** 
+     * 显示预约详情
+     * @param {number} id - 预约ID
+     */
+    showDetail(id) {
+      this.currentAppointmentId = id
+      this.detailVisible = true
+    },
+    
+    /** 
+     * 处理详情弹窗成功事件
+     */
+    handleDetailSuccess() {
+      // 重新获取预约列表
+      this.fetchAppointments()
+    },
+    
+    /** 
      * 取消预约
      * @param {number} id - 预约ID
      */
@@ -142,19 +183,16 @@ export default {
 </script>
 
 <style scoped>
-
-
 .personal-appointment {
   padding: 20px;
   max-width: 800px;
   margin: 0 auto;
-  .header h1 {
-    margin-top: 40px;
-    color: #333;
-  }
 }
 
-
+.header h1 {
+  margin-top: 40px;
+  color: #333;
+}
 
 .appointment-list {
   display: flex;
@@ -199,6 +237,21 @@ export default {
   background-color: #ff7875;
 }
 
+.detail-btn {
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-right: 10px;
+}
+
+.detail-btn:hover {
+  background-color: #40a9ff;
+}
+
 .no-appointments {
   text-align: center;
   color: #999;
@@ -234,9 +287,21 @@ export default {
   border: 1px solid #ffccc7;
 }
 
-.status-expired {
+.status-canceled {
   background-color: #f9f9f9;
   color: #bfbfbf;
   border: 1px solid #d9d9d9;
+}
+
+.status-checked-in {
+  background-color: #e6fffb;
+  color: #08979c;
+  border: 1px solid #87e8de;
+}
+
+.status-completed {
+  background-color: #f0f5ff;
+  color: #2f54eb;
+  border: 1px solid #adc6ff;
 }
 </style>

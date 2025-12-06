@@ -1,16 +1,6 @@
 <template>
-  <el-dialog
-    title="预约会议室"
-    v-model="visible"
-    width="500px"
-    :before-close="handleClose"
-  >
-    <el-form
-      :model="form"
-      :rules="rules"
-      ref="formRef"
-      label-width="100px"
-    >
+  <el-dialog title="预约会议室" v-model="visible" width="500px" :before-close="handleClose">
+    <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
       <el-form-item label="标题" prop="title">
         <el-input v-model="form.title" placeholder="请输入会议标题" />
       </el-form-item>
@@ -39,7 +29,6 @@
         />
       </el-form-item>
     </el-form>
-    
     <template #footer>
       <span class="dialog-footer">
         <el-button @click="cancel">取消</el-button>
@@ -51,6 +40,9 @@
 
 <script>
 import { ref, reactive, defineExpose } from 'vue'
+import { createAppointment } from '@/api/appointment.js'
+import { getCurrentUser } from '@/api/user.js'
+import { ElMessage } from 'element-plus'
 
 export default {
   name: 'AddAppointmentPop',
@@ -64,7 +56,8 @@ export default {
       description: '',
       attendeesCount: 1,
       startsAt: '',
-      endsAt: ''
+      endsAt: '',
+      roomId: null
     })
     
     // 表单验证规则
@@ -90,7 +83,9 @@ export default {
     const formRef = ref(null)
     
     // 显示弹窗
-    const show = () => {
+    const show = (roomId) => {
+      // 将roomId存储到form中
+      form.roomId = roomId
       visible.value = true
     }
     
@@ -107,16 +102,43 @@ export default {
     }
     
     // 确定按钮
-    const confirm = () => {
-      formRef.value.validate((valid) => {
+    const confirm = async () => {
+      formRef.value.validate(async (valid) => {
         if (valid) {
-          const appointmentInfo = {
-            ...form
-          };
-          console.log('预约信息:', appointmentInfo)
-          // 这里可以添加提交预约的逻辑
-          // 提交成功后关闭弹窗
-          visible.value = false
+          const response = null
+          try {
+            // 获取当前用户信息
+            const userResponse = await getCurrentUser()
+            const userId = userResponse.data.id
+            
+            // 构造预约数据
+            const appointmentData = {
+              userId: userId,
+              roomId: form.roomId,
+              title: form.title,
+              description: form.description,
+              attendeesCount: form.attendeesCount,
+              startsAt: form.startsAt ? form.startsAt.replace(' ', 'T') : '',
+              endsAt: form.endsAt ? form.endsAt.replace(' ', 'T') : ''
+            }
+            
+            // 调用创建预约接口
+            response = await createAppointment(appointmentData)
+            console.log('预约响应:', response)
+            // 根据返回结果展示提示
+            if (response.code === 0) {
+              ElMessage.success('预约成功')
+              // 提交成功后关闭弹窗
+              visible.value = false
+              // 重置表单
+              formRef.value.resetFields()
+            } else {
+              ElMessage.error('预约失败')
+            }
+          } catch (error) {
+            console.error('预约失败:', error)
+            ElMessage.error('预约失败，预约时间冲突或服务器错误')
+          }
         } else {
           console.log('表单验证失败')
           return false
@@ -125,7 +147,9 @@ export default {
     }
     
     // 暴露给父组件的方法
-    defineExpose({ show })
+    defineExpose({
+      show
+    })
     
     return {
       visible,
