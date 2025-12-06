@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { getToken } from '@/utils/cookie.js'
 
 // 创建 axios 实例
 const service = axios.create({
@@ -10,7 +11,7 @@ const service = axios.create({
 service.interceptors.request.use(
   config => {
     // 在发送请求之前做些什么
-    const token = localStorage.getItem('token')
+    const token = getToken()
     if (token) {
       config.headers['Authorization'] = 'Bearer ' + token
     }
