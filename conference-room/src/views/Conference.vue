@@ -113,7 +113,7 @@ export default {
         currentPage.value,
         pageSize.value,
         searchForm.value.keyword || null,
-        null, // status参数暂不使用
+        'bookable', 
         searchForm.value.minCapacity || null,
         searchForm.value.location || null
       ).then(response => {
