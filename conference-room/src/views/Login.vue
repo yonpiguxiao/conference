@@ -23,6 +23,7 @@
         />
       </div>
       <button @click="handleLogin" class="login-button">登录</button>
+      <button @click="handleRegister" class="register-button">注册</button>
     </div>
   </div>
 </template>
@@ -39,13 +40,51 @@ export default {
     }
   },
   methods: {
-    handleLogin() {
-      // 登录逻辑可以在这里实现
-      console.log('登录信息:', this.loginForm);
-      // 这里可以添加实际的登录验证逻辑
+      handleLogin() {
+        // 登录逻辑可以在这里实现
+        console.log('登录信息:', this.loginForm);
+        // 这里可以添加实际的登录验证逻辑
+      },
+      async handleRegister() {
+        try {
+          // 发送注册请求
+          const response = await fetch('/auth/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              username: this.loginForm.username,
+              password: this.loginForm.password
+            })
+          });
+          
+          // 检查响应状态
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
+          const result = await response.json();
+          
+          // 检查返回结果
+          if (result.msg === 'success') {
+            // 弹出提示
+            alert('注册成功，请重新登入');
+          } else {
+            // 处理其他情况
+            alert('注册失败: ' + (result.msg || '未知错误'));
+          }
+        } catch (error) {
+          console.error('注册请求失败:', error);
+          if (error.name === 'TypeError') {
+            alert('网络连接失败，请检查后端服务是否运行');
+          } else {
+            alert('注册请求失败，请稍后重试');
+          }
+        }
+      }
     }
   }
-}
 </script>
 
 <style scoped>
@@ -113,5 +152,21 @@ export default {
 
 .login-button:hover {
   background-color: #337ecc;
+}
+
+.register-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #67c23a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.register-button:hover {
+  background-color: #5daf34;
 }
 </style>
