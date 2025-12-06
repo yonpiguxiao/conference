@@ -29,8 +29,12 @@
 </template>
 
 <script>
+import { login } from '@/api/user.js'
+import { setToken } from '@/utils/cookie.js'
+import router from '@/router';
+import { ElMessage } from 'element-plus';
+
 export default {
-  name: 'Login',
   data() {
     return {
       loginForm: {
@@ -40,51 +44,34 @@ export default {
     }
   },
   methods: {
-      handleLogin() {
-        // 登录逻辑可以在这里实现
-        console.log('登录信息:', this.loginForm);
-        // 这里可以添加实际的登录验证逻辑
-      },
-      async handleRegister() {
-        try {
-          // 发送注册请求
-          const response = await fetch('/auth/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              username: this.loginForm.username,
-              password: this.loginForm.password
-            })
-          });
-          
-          // 检查响应状态
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          
-          const result = await response.json();
-          
-          // 检查返回结果
-          if (result.msg === 'success') {
-            // 弹出提示
-            alert('注册成功，请重新登入');
-          } else {
-            // 处理其他情况
-            alert('注册失败: ' + (result.msg || '未知错误'));
-          }
-        } catch (error) {
-          console.error('注册请求失败:', error);
-          if (error.name === 'TypeError') {
-            alert('网络连接失败，请检查后端服务是否运行');
-          } else {
-            alert('注册请求失败，请稍后重试');
-          }
-        }
+    handleLogin() {
+      // 使用输入框中的数据作为请求参数
+      const loginParams = {
+        username: this.loginForm.username,
+        password: this.loginForm.password
       }
+      
+      login(loginParams).then(response => {
+        console.log('登录响应:', response)
+        if (response.code === 0) {
+          // 登录成功，设置token
+          setToken(response.data.token)
+          // 这里可以添加跳转到首页或其他操作
+          router.push('/');
+          console.log('登录成功')
+        } else {
+          console.error('登录失败:', response.msg)
+        }
+      }).catch(error => {
+        console.error('登录请求出错:', error)
+      })
+    },
+    handleRegister() {
+      // 注册功能可以在这里实现
+      console.log('注册按钮被点击')
     }
   }
+}
 </script>
 
 <style scoped>
