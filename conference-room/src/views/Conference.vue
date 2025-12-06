@@ -30,10 +30,11 @@
         <el-col :span="4" v-for="room in rooms" :key="room.id" class="room-item-col">
           <el-card class="room-item">
             <div class="room-image">
-              <img :src="roomImage" alt="会议室图片" />
+              <img :src="room.url" alt="会议室图片" />
             </div>
             <div class="room-info">
-              <h3>会议室 {{ room.number }}</h3>
+              <h3>会议室 {{ room.roomNumber }}</h3>
+              <p>{{ room.location }}</p>
             </div>
             <div class="room-actions">
               <el-button size="small" @click="viewDetails(room)">查看详情</el-button>
@@ -102,16 +103,7 @@ export default {
     const totalRooms = ref(24)
 
     // 会议室数据
-    const rooms = ref([
-      { id: 1, number: 'A101', address: '北京市朝阳区某某大厦A座101室' },
-      { id: 2, number: 'A102', address: '北京市朝阳区某某大厦A座102室' },
-      { id: 3, number: 'A103', address: '北京市朝阳区某某大厦A座103室' },
-      { id: 4, number: 'A104', address: '北京市朝阳区某某大厦A座104室' },
-      { id: 5, number: 'B201', address: '北京市朝阳区某某大厦B座201室' },
-      { id: 6, number: 'B202', address: '北京市朝阳区某某大厦B座202室' },
-      { id: 7, number: 'B203', address: '北京市朝阳区某某大厦B座203室' },
-      { id: 8, number: 'B204', address: '北京市朝阳区某某大厦B座204室' }
-    ])
+    const rooms = ref([])
 
     // 方法
     const onSearch = () => {
@@ -127,8 +119,8 @@ export default {
       ).then(response => {
         console.log('搜索结果:', response)
         // 更新会议室数据
-        // rooms.value = response.data.items
-        // totalRooms.value = response.data.total
+        rooms.value = response.data.list
+        totalRooms.value = response.data.total
       }).catch(error => {
         console.error('搜索失败:', error)
       })
@@ -171,18 +163,22 @@ export default {
     const handleSizeChange = (val) => {
       pageSize.value = val
       console.log(`每页 ${val} 条`)
-      // 这里可以添加重新加载数据的逻辑
+      // 重新加载数据
+      onSearch()
     }
 
     const handleCurrentChange = (val) => {
       currentPage.value = val
       console.log(`当前页: ${val}`)
-      // 这里可以添加重新加载数据的逻辑
+      // 重新加载数据
+      onSearch()
     }
 
     // 检查组件是否正确挂载
     onMounted(() => {
       console.log('ConferenceInfoPop 组件引用:', conferenceInfoPop.value)
+      // 组件挂载时加载初始数据
+      onSearch()
     })
 
     return {
