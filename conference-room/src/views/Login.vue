@@ -29,7 +29,7 @@
 </template>
 
 <script>
-import { login } from '@/api/user.js'
+import { login, register } from '@/api/user.js'
 import { setToken } from '@/utils/cookie.js'
 import router from '@/router';
 import { ElMessage } from 'element-plus';
@@ -56,19 +56,46 @@ export default {
         if (response.code === 0) {
           // 登录成功，设置token
           setToken(response.data.token)
+          // 显示成功消息
+          ElMessage.success('登录成功')
           // 这里可以添加跳转到首页或其他操作
           router.push('/');
           console.log('登录成功')
         } else {
+          // 显示错误消息
+          ElMessage.error(response.msg || '登录失败')
           console.error('登录失败:', response.msg)
         }
       }).catch(error => {
+        // 显示错误消息
+        ElMessage.error('登录请求出错')
         console.error('登录请求出错:', error)
       })
     },
     handleRegister() {
-      // 注册功能可以在这里实现
-      console.log('注册按钮被点击')
+            // 使用输入框中的数据作为请求参数
+      const loginParams = {
+        username: this.loginForm.username,
+        password: this.loginForm.password
+      }
+      
+      register(loginParams).then(response => {
+        console.log('注册响应:', response)
+        if (response.code === 0) {
+          // 显示成功消息
+          ElMessage.success('注册成功，请重新登录')
+          // 这里可以添加跳转到首页或其他操作
+          console.log('注册成功')
+        } else {
+          // 显示错误消息
+          ElMessage.error(response.msg || '注册失败')
+          console.error('注册失败:', response.msg)
+        }
+      }).catch(error => {
+        // 显示错误消息
+        ElMessage.error('注册请求出错')
+        console.error('注册请求出错:', error)
+      })
     }
   }
 }
