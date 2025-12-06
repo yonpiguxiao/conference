@@ -10,10 +10,10 @@
     </div>
     <div class="user-info" @mouseenter="showDropdown = true" @mouseleave="showDropdown = false">
       <img :src="headImage" alt="用户头像" class="user-avatar" />
-<span class="user-name">{{ username || '测试用户' }}</span>
+      <span class="user-name">{{ username || '测试用户' }}</span>
       <div v-if="showDropdown" class="dropdown-menu">
-        <router-link to="/login" class="dropdown-item">登录</router-link>
-        <a href="#" class="dropdown-item" @click.prevent="logout">退出登录</a>
+        <router-link v-if="!token" to="/login" class="dropdown-item">登录</router-link>
+        <a v-if="token" href="#" class="dropdown-item" @click.prevent="logout">退出登录</a>
       </div>
     </div>
   </div>
@@ -24,16 +24,16 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import headImage from '@/assets/images/head_image.png'
 import { getCurrentUser } from '@/api/user.js'
-import { getToken } from '@/utils/cookie.js'
+import { getToken, removeToken } from '@/utils/cookie.js'
 
 const showDropdown = ref(false)
 const router = useRouter()
 const username = ref('')
+const token = ref(getToken())
 
 // 获取当前用户信息
 const fetchCurrentUser = async () => {
-  const token = getToken()
-  if (token) {
+  if (token.value) {
     try {
       const response = await getCurrentUser()
       if (response.code === 0) {
@@ -48,7 +48,7 @@ const fetchCurrentUser = async () => {
 const logout = () => {
   // 在实际应用中，这里会清除用户的认证状态
   // 例如：localStorage.removeItem('token')
-  
+  removeToken()
   // 跳转到登录页面
   router.push('/login')
 }
