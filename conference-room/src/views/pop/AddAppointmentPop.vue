@@ -11,45 +11,32 @@
       ref="formRef"
       label-width="100px"
     >
-      <el-form-item label="预约时间" prop="reservationDate">
+      <el-form-item label="标题" prop="title">
+        <el-input v-model="form.title" placeholder="请输入会议标题" />
+      </el-form-item>
+      <el-form-item label="描述" prop="description">
+        <el-input v-model="form.description" type="textarea" placeholder="请输入会议描述" />
+      </el-form-item>
+      <el-form-item label="参与人数" prop="attendeesCount">
+        <el-input-number v-model="form.attendeesCount" :min="1" placeholder="请输入参与人数" />
+      </el-form-item>
+      <el-form-item label="开始时间" prop="startsAt">
         <el-date-picker
-          v-model="form.reservationDate"
-          type="date"
-          placeholder="请选择预约日期"
-          format="YYYY-MM-DD"
-          value-format="YYYY-MM-DD"
+          v-model="form.startsAt"
+          type="datetime"
+          placeholder="请选择开始时间"
+          format="YYYY-MM-DD HH:mm"
+          value-format="YYYY-MM-DD HH:mm"
         />
       </el-form-item>
-      
-      <el-form-item label="开始时间" prop="startTime">
-        <el-select v-model="form.startTime" placeholder="请选择开始时间">
-          <el-option
-            v-for="hour in 24"
-            :key="hour - 1"
-            :label="`${hour - 1}:00`"
-            :value="`${hour - 1}:00`"
-          />
-        </el-select>
-      </el-form-item>
-      
-      <el-form-item label="结束时间" prop="endTime">
-        <el-select v-model="form.endTime" placeholder="请选择结束时间" :disabled="!form.startTime">
-          <el-option
-            v-for="hour in 24"
-            :key="hour"
-            :label="`${hour}:00`"
-            :value="`${hour}:00`"
-            :disabled="hour <= parseInt(form.startTime)"
-          />
-        </el-select>
-      </el-form-item>
-      
-      <el-form-item label="预约人" prop="reserverName">
-        <el-input v-model="form.reserverName" placeholder="请输入预约人名字" />
-      </el-form-item>
-      
-      <el-form-item label="联系电话" prop="contactPhone">
-        <el-input v-model="form.contactPhone" placeholder="请输入联系号码" />
+      <el-form-item label="结束时间" prop="endsAt">
+        <el-date-picker
+          v-model="form.endsAt"
+          type="datetime"
+          placeholder="请选择结束时间"
+          format="YYYY-MM-DD HH:mm"
+          value-format="YYYY-MM-DD HH:mm"
+        />
       </el-form-item>
     </el-form>
     
@@ -73,29 +60,29 @@ export default {
     
     // 表单数据
     const form = reactive({
-      reservationDate: '',
-      startTime: '9:00',
-      endTime: '10:00',
-      reserverName: '',
-      contactPhone: ''
+      title: '',
+      description: '',
+      attendeesCount: 1,
+      startsAt: '',
+      endsAt: ''
     })
     
     // 表单验证规则
     const rules = {
-      reservationDate: [
-        { required: true, message: '请选择预约日期', trigger: 'change' }
+      title: [
+        { required: true, message: '请输入会议标题', trigger: 'blur' }
       ],
-      startTime: [
+      description: [
+        { required: true, message: '请输入会议描述', trigger: 'blur' }
+      ],
+      attendeesCount: [
+        { required: true, message: '请输入参与人数', trigger: 'blur' }
+      ],
+      startsAt: [
         { required: true, message: '请选择开始时间', trigger: 'change' }
       ],
-      endTime: [
+      endsAt: [
         { required: true, message: '请选择结束时间', trigger: 'change' }
-      ],
-      reserverName: [
-        { required: true, message: '请输入预约人名字', trigger: 'blur' }
-      ],
-      contactPhone: [
-        { required: true, message: '请输入联系号码', trigger: 'blur' }
       ]
     }
     
@@ -123,11 +110,8 @@ export default {
     const confirm = () => {
       formRef.value.validate((valid) => {
         if (valid) {
-          // 将时间段合并为一个字符串
-          const timePeriod = `${form.startTime}-${form.endTime}`;
           const appointmentInfo = {
-            ...form,
-            timePeriod
+            ...form
           };
           console.log('预约信息:', appointmentInfo)
           // 这里可以添加提交预约的逻辑
