@@ -5,6 +5,45 @@
       <h2>预约管理</h2>
     </div>
     
+    <!-- 搜索表单 -->
+    <el-form :model="searchForm" label-width="100px" class="search-form">
+      <el-row :gutter="20">
+        <el-col :span="6">
+          <el-form-item label="房间名">
+            <el-input v-model="searchForm.roomName" placeholder="请输入房间名" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="开始时间">
+            <el-date-picker
+              v-model="searchForm.startsFrom"
+              type="datetime"
+              placeholder="请选择开始时间"
+              format="YYYY-MM-DD HH:mm:ss"
+              value-format="YYYY-MM-DDTHH:mm:ss"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item label="结束时间">
+            <el-date-picker
+              v-model="searchForm.endsTo"
+              type="datetime"
+              placeholder="请选择结束时间"
+              format="YYYY-MM-DD HH:mm:ss"
+              value-format="YYYY-MM-DDTHH:mm:ss"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
+          <el-form-item>
+            <el-button type="primary" @click="handleSearch">搜索</el-button>
+            <el-button @click="handleReset">重置</el-button>
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
+    
     <!-- 预约列表 -->
     <div class="appointment-list">
       <div 
@@ -38,6 +77,18 @@
         </div>
       </div>
     </div>
+    
+    <!-- 分页 -->
+    <div class="pagination-container">
+      <el-pagination
+        v-model:current-page="pagination.page"
+        v-model:page-size="pagination.pageSize"
+        :total="pagination.total"
+        layout="total, prev, pager, next, jumper"
+        @current-change="handlePageChange"
+        @size-change="handleSizeChange"
+      />
+    </div>
   </div>
   
   <!-- 审批预约弹窗 -->
@@ -45,11 +96,25 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, reactive } from 'vue'
 import ApproveAppointmentPop from './ApproveAppointmentPop.vue'
 import { getAppointmentList, approve } from '@/api/appointment'
 import { formatDateTime } from '@/utils/date'
 import { ElMessage } from 'element-plus'
+
+// 搜索表单
+const searchForm = reactive({
+  roomName: '',
+  startsFrom: '',
+  endsTo: ''
+})
+
+// 分页信息
+const pagination = reactive({
+  page: 1,
+  pageSize: 20,
+  total: 0
+})
 
 // 控制审批弹窗显示
 const approvalDialogVisible = ref(false)
@@ -140,10 +205,20 @@ const handleApprovalConfirm = async (approvalData) => {
 // 获取预约列表数据
 const fetchAppointmentList = async () => {
   try {
-    const response = await getAppointmentList({
-      page: 1,
-      pageSize: 20
+    const params = {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      ...searchForm
+    }
+    
+    // 清理空值参数
+    Object.keys(params).forEach(key => {
+      if (params[key] === '' || params[key] === null || params[key] === undefined) {
+        delete params[key]
+      }
     })
+    
+    const response = await getAppointmentList(params)
     
     // 处理返回的数据
     if (response.code === 0) {
@@ -151,6 +226,7 @@ const fetchAppointmentList = async () => {
         ...item,
         time: `${formatDateTime(item.startsAt)} 至 ${formatDateTime(item.endsAt)}`
       }))
+      pagination.total = response.data.total
     } else {
       ElMessage.error('获取预约列表失败: ' + response.msg)
     }
@@ -158,6 +234,34 @@ const fetchAppointmentList = async () => {
     console.error('获取预约列表失败:', error)
     ElMessage.error('获取预约列表失败: ' + (error.message || '未知错误'))
   }
+}
+
+// 处理搜索
+const handleSearch = () => {
+  pagination.page = 1
+  fetchAppointmentList()
+}
+
+// 处理重置
+const handleReset = () => {
+  searchForm.roomName = ''
+  searchForm.startsFrom = ''
+  searchForm.endsTo = ''
+  pagination.page = 1
+  fetchAppointmentList()
+}
+
+// 处理分页变化
+const handlePageChange = (page) => {
+  pagination.page = page
+  fetchAppointmentList()
+}
+
+// 处理页面大小变化
+const handleSizeChange = (pageSize) => {
+  pagination.pageSize = pageSize
+  pagination.page = 1
+  fetchAppointmentList()
 }
 
 // 组件挂载时获取数据
@@ -183,10 +287,16 @@ onMounted(() => {
   }
 }
 
+.search-form {
+  padding: 20px;
+  border-radius: 4px;
+}
+
 .appointment-list {
   display: flex;
   flex-direction: column;
   gap: 15px;
+  margin-bottom: 20px;
 }
 
 .appointment-item {
@@ -249,5 +359,11 @@ onMounted(() => {
 
 .approval-button {
   flex: 0 0 auto;
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
 }
 </style>
