@@ -11,7 +11,7 @@
         v-for="appointment in appointmentList" 
         :key="appointment.id" 
         class="appointment-item"
-        :class="{ 'pending': appointment.status === '未审批' }"
+        :class="{ 'pending': appointment.status === 'pending' }"
       >
         <!-- 预约室名称 -->
         <div class="room-name">{{ appointment.roomName }}</div>
@@ -20,7 +20,7 @@
         <div class="appointment-info">
           <div class="info-row">
             <span class="label">预约人：</span>
-            <span class="value">{{ appointment.applicant }}</span>
+            <span class="value">{{ appointment.userName }}</span>
           </div>
           <div class="info-row">
             <span class="label">预约时间：</span>
@@ -28,14 +28,14 @@
           </div>
           <div class="info-row">
             <span class="label">预约状态：</span>
-            <span class="value" :class="getStatusClass(appointment.status)">{{ appointment.status }}</span>
+            <span class="value" :class="getStatusClass(appointment.status)">{{ getStatusText(appointment.status) }}</span>
           </div>
         </div>
         
-    <!-- 审批按钮（仅对未审批的预约显示） -->
-    <div v-if="appointment.status === '未审批'" class="approval-button">
-      <el-button type="primary" size="small" @click="openApprovalDialog(appointment)">审批</el-button>
-    </div>
+        <!-- 审批按钮（仅对未审批的预约显示） -->
+        <div v-if="appointment.status === 'pending'" class="approval-button">
+          <el-button type="primary" size="small" @click="openApprovalDialog(appointment)">审批</el-button>
+        </div>
       </div>
     </div>
   </div>
@@ -47,6 +47,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import ApproveAppointmentPop from './ApproveAppointmentPop.vue'
+import { getAppointmentList, approve } from '@/api/appointment'
+import { formatDateTime } from '@/utils/date'
+import { ElMessage } from 'element-plus'
 
 // 控制审批弹窗显示
 const approvalDialogVisible = ref(false)
@@ -55,57 +58,45 @@ const approvalDialogVisible = ref(false)
 const currentAppointment = ref(null)
 
 // 预约列表数据
-const appointmentList = ref([
-  {
-    id: 1,
-    roomName: '会议室A',
-    applicant: '张三',
-    time: '2025年10月30号 10:00-13:00',
-    status: '未审批'
-  },
-  {
-    id: 2,
-    roomName: '会议室B',
-    applicant: '李四',
-    time: '2025年10月31号 14:00-16:00',
-    status: '预约已使用'
-  },
-  {
-    id: 3,
-    roomName: '会议室C',
-    applicant: '王五',
-    time: '2025年11月1号 09:00-11:00',
-    status: '有预约未使用'
-  },
-  {
-    id: 4,
-    roomName: '会议室D',
-    applicant: '赵六',
-    time: '2025年11月2号 15:00-17:00',
-    status: '已取消'
-  },
-  {
-    id: 5,
-    roomName: '会议室E',
-    applicant: '孙七',
-    time: '2025年11月3号 13:00-15:00',
-    status: '未审批'
-  }
-])
+const appointmentList = ref([])
 
 // 根据状态获取对应的CSS类名
 const getStatusClass = (status) => {
   switch (status) {
-    case '有预约未使用':
-      return 'status-unused'
-    case '预约已使用':
+    case 'completed':
       return 'status-used'
-    case '未审批':
+    case 'checked_in':
+      return 'status-used'
+    case 'approved':
+      return 'status-unused'
+    case 'pending':
       return 'status-pending'
-    case '已取消':
+    case 'rejected':
+      return 'status-cancelled'
+    case 'canceled':
       return 'status-cancelled'
     default:
       return ''
+  }
+}
+
+// 获取状态显示文本
+const getStatusText = (status) => {
+  switch (status) {
+    case 'pending':
+      return '审批中'
+    case 'approved':
+      return '审批通过'
+    case 'rejected':
+      return '审批失败'
+    case 'canceled':
+      return '已取消'
+    case 'checked_in':
+      return '已签到'
+    case 'completed':
+      return '已完成'
+    default:
+      return status
   }
 }
 
@@ -116,28 +107,62 @@ const openApprovalDialog = (appointment) => {
 }
 
 // 处理审批确认
-const handleApprovalConfirm = (approvalData) => {
+const handleApprovalConfirm = async (approvalData) => {
   console.log('审批结果:', approvalData)
   console.log('被审批的预约:', currentAppointment.value)
   
-  // 这里应该调用API提交审批结果
-  // 更新预约列表中的状态
-  if (currentAppointment.value) {
-    if (approvalData.approvalResult === 'agree') {
-      currentAppointment.value.status = '预约已使用'
-    } else if (approvalData.approvalResult === 'reject') {
-      currentAppointment.value.status = '已取消'
+  try {
+    // 调用API提交审批结果
+    const payload = {
+      action: approvalData.approvalResult === 'agree' ? 'approve' : 'reject',
+      ...(approvalData.approvalResult === 'reject' && { reason: approvalData.rejectReason })
     }
+    
+    await approve(currentAppointment.value.id, payload)
+    
+    // 更新预约列表中的状态
+    if (currentAppointment.value) {
+      if (approvalData.approvalResult === 'agree') {
+        currentAppointment.value.status = 'approved'
+      } else if (approvalData.approvalResult === 'reject') {
+        currentAppointment.value.status = 'rejected'
+      }
+    }
+    
+    // 显示成功消息
+    ElMessage.success('审批成功')
+  } catch (error) {
+    console.error('审批失败:', error)
+    ElMessage.error('审批失败: ' + (error.message || '未知错误'))
   }
-  
-  // 显示成功消息
-  ElMessage.success('审批成功')
+}
+
+// 获取预约列表数据
+const fetchAppointmentList = async () => {
+  try {
+    const response = await getAppointmentList({
+      page: 1,
+      pageSize: 20
+    })
+    
+    // 处理返回的数据
+    if (response.code === 0) {
+      appointmentList.value = response.data.list.map(item => ({
+        ...item,
+        time: `${formatDateTime(item.startsAt)} 至 ${formatDateTime(item.endsAt)}`
+      }))
+    } else {
+      ElMessage.error('获取预约列表失败: ' + response.msg)
+    }
+  } catch (error) {
+    console.error('获取预约列表失败:', error)
+    ElMessage.error('获取预约列表失败: ' + (error.message || '未知错误'))
+  }
 }
 
 // 组件挂载时获取数据
 onMounted(() => {
-  // 这里应该调用API获取预约数据
-  console.log('获取预约数据')
+  fetchAppointmentList()
 })
 </script>
 
