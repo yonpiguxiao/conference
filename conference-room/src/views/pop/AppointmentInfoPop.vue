@@ -103,7 +103,8 @@ const formData = reactive({
   endsAt: '',
   title: '',
   description: '',
-  attendeesCount: 1
+  attendeesCount: 1,
+  status: '' // 添加状态字段
 })
 
 // 表单验证规则
@@ -137,6 +138,7 @@ const fetchAppointmentDetail = async (id) => {
     formData.title = detail.title
     formData.description = detail.description
     formData.attendeesCount = detail.attendeesCount
+    formData.status = detail.status // 存储预约状态
   } catch (err) {
     console.error('获取预约详情失败:', err)
     ElMessage.error('获取预约详情失败')
@@ -163,6 +165,12 @@ const handleClose = () => {
 const handleSubmit = async () => {
   try {
     await formRef.value.validate()
+    
+    // 检查预约状态，只有当status === 'pending'时才允许更新预约
+    if (formData.status !== 'pending') {
+      ElMessage.warning('该状态下不可修改预约')
+      return
+    }
     
     // 格式化时间字段
     const formattedStartsAt = formatISODateTime(formData.startsAt)
