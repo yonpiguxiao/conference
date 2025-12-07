@@ -8,10 +8,23 @@
     <!-- 搜索区域 -->
     <div class="search-container">
       <el-form :inline="true" :model="searchForm" class="search-form">
-        <el-form-item label="房间号">
+        <el-form-item label="模糊搜索">
           <el-input
-            v-model="searchForm.roomNumber"
-            placeholder="请输入房间号"
+            v-model="searchForm.keyword"
+            placeholder="请输入会议室名称或房号"
+          />
+        </el-form-item>
+        <el-form-item label="最小容量">
+          <el-input-number
+            v-model="searchForm.minCapacity"
+            :min="0"
+            placeholder="最小容量"
+          />
+        </el-form-item>
+        <el-form-item label="位置">
+          <el-input
+            v-model="searchForm.location"
+            placeholder="请输入位置信息"
           />
         </el-form-item>
         <el-form-item>
@@ -32,9 +45,9 @@
         <el-table-column label="照片">
           <template #default="scope">
             <el-image
-              :src="examImage"
+              :src="scope.row.url || examImage"
               class="room-image"
-              :preview-src-list="[examImage]"
+              :preview-src-list="[scope.row.url || examImage]"
               :initial-index="0"
               fit="cover"
             />
@@ -83,66 +96,51 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { getRoomPage } from '@/api/room.js'
+import { ElMessage } from 'element-plus'
 import examImage from '@/assets/images/exam.png'
 
 const router = useRouter()
 
 // 搜索表单数据
 const searchForm = ref({
-  appointmentTime: '',
-  roomNumber: ''
+  keyword: '',
+  minCapacity: null,
+  location: ''
 })
 
 // 表格数据
-const tableData = ref([
-  {
-    id: 1,
-    name: '会议室A',
-    roomNumber: 'A101',
-    capacity: 10,
-    purpose: '日常会议',
-    status: 1 // 1: 可预约, 0: 不可预约
-  },
-  {
-    id: 2,
-    name: '会议室B',
-    roomNumber: 'B202',
-    capacity: 20,
-    purpose: '培训会议',
-    status: 0
-  }
-])
+const tableData = ref([])
 
 // 分页数据
 const pagination = ref({
   currentPage: 1,
-  pageSize: 10,
+  pageSize: 20,
   total: 0
 })
 
 // 搜索功能
-const handleSearch = () => {
-  console.log('搜索:', searchForm.value)
-  // 这里应该调用API获取数据
+const handleSearch = async () => {
+  await fetchRoomData()
 }
 
 // 重置功能
 const handleReset = () => {
   searchForm.value = {
-    appointmentTime: '',
-    roomNumber: ''
+    keyword: '',
+    minCapacity: null,
+    location: ''
   }
+  fetchRoomData()
 }
 
 // 新增功能
 const handleAdd = () => {
-  console.log('新增会议室')
   router.push({ name: 'update-conference', query: { mode: 'add' } })
 }
 
 // 编辑功能
 const handleEdit = (row) => {
-  console.log('编辑会议室:', row)
   router.push({ name: 'update-conference', query: { mode: 'edit', id: row.id }, state: { conferenceData: row } })
 }
 
@@ -161,17 +159,51 @@ const handleStatusChange = (row) => {
 // 分页功能
 const handleSizeChange = (val) => {
   pagination.value.pageSize = val
-  console.log('每页条数改变:', val)
+  fetchRoomData()
 }
 
 const handleCurrentChange = (val) => {
   pagination.value.currentPage = val
-  console.log('当前页改变:', val)
+  fetchRoomData()
+}
+
+// 获取会议室数据
+const fetchRoomData = async () => {
+  try {
+    const response = await getRoomPage(
+      pagination.value.currentPage,
+      pagination.value.pageSize,
+      searchForm.value.keyword || null,
+      null, // status参数暂时不使用
+      searchForm.value.minCapacity || null,
+      searchForm.value.location || null
+    )
+    
+    if (response.code === 0) {
+      // 转换数据格式以适配表格显示
+      tableData.value = response.data.list.map(item => ({
+        id: item.id,
+        name: item.name,
+        roomNumber: item.roomNumber,
+        capacity: item.capacity,
+        purpose: item.purpose,
+        status: item.status === 'bookable' ? 1 : 0, // bookable: 1 (可预约), unbookable: 0 (不可预约)
+        url: item.url
+      }))
+      
+      pagination.value.total = response.data.total
+    } else {
+      ElMessage.error(response.msg || '获取会议室数据失败')
+    }
+  } catch (error) {
+    console.error('获取会议室数据失败:', error)
+    ElMessage.error('获取会议室数据失败: ' + error.message)
+  }
 }
 
 // 组件挂载时获取数据
 onMounted(() => {
-  // 这里应该调用API获取初始数据
+  fetchRoomData()
 })
 </script>
 
