@@ -108,7 +108,7 @@ const tableData = computed(() => {
   
   // 创建时间段数据（每半小时一个时段）
   const timeSlots = []
-  for (let hour = 8; hour <= 20; hour++) {
+  for (let hour = 0; hour <= 23; hour++) {
     for (let minute = 0; minute < 60; minute += 30) {
       const startTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
       const endTime = minute === 30 
