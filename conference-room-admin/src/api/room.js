@@ -16,6 +16,19 @@ export function getRoomPage(page = 1, pageSize = 20, keyword = null, status = nu
   })
 }
 
+// 每周会议室状态查看（周视图）
+export function getWeeklyRoomStatus(startDate, days = 7, roomIds = null) {
+  return request({
+    url: '/admin/rooms/status/weekly',
+    method: 'get',
+    params: {
+      startDate,
+      days,
+      roomIds
+    }
+  })
+}
+
 // 根据ID获取会议室详情
 export function getRoomById(id) {
   return request({

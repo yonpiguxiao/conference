@@ -67,6 +67,7 @@
         </el-table-column>
         <el-table-column label="操作" width="150">
           <template #default="scope">
+            <el-button size="small" @click="handleViewWeekly(scope.row)">周视图</el-button>
             <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
             <el-button
               size="small"
@@ -90,6 +91,13 @@
         @current-change="handleCurrentChange"
       />
     </div>
+    
+    <!-- 周视图弹窗 -->
+    <ConferenceWeeklyPop 
+      v-model:visible="weeklyPopVisible"
+      :room-id="selectedRoom.id"
+      :room-name="selectedRoom.name"
+    />
   </div>
 </template>
 
@@ -99,6 +107,7 @@ import { useRouter } from 'vue-router'
 import { getRoomPage, setRoomStatus, getRoomById, deleteRoom } from '@/api/room.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import examImage from '@/assets/images/exam.png'
+import ConferenceWeeklyPop from '@/views/pop/ConferenceWeeklyPop.vue'
 
 const router = useRouter()
 
@@ -117,6 +126,13 @@ const pagination = ref({
   currentPage: 1,
   pageSize: 20,
   total: 0
+})
+
+// 周视图弹窗相关
+const weeklyPopVisible = ref(false)
+const selectedRoom = ref({
+  id: null,
+  name: ''
 })
 
 // 搜索功能
@@ -180,6 +196,15 @@ const handleDelete = (row) => {
     // 用户取消删除
     ElMessage.info('已取消删除');
   });
+}
+
+// 查看周列表功能
+const handleViewWeekly = (row) => {
+  selectedRoom.value = {
+    id: row.id,
+    name: row.name
+  }
+  weeklyPopVisible.value = true
 }
 
 // 状态切换
