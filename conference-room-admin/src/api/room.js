@@ -58,3 +58,17 @@ export function setRoomStatus(id, statusData) {
     data: statusData
   })
 }
+
+// 上传会议室图片（管理员）
+export function uploadRoomImage(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request({
+    url: '/media/rooms',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}

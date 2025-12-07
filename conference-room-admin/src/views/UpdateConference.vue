@@ -84,6 +84,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
+import { uploadRoomImage } from '@/api/room'
 
 const route = useRoute()
 const router = useRouter()
@@ -125,7 +126,7 @@ const formRules = {
 }
 
 // 处理图片上传
-const handleImageChange = (uploadFile) => {
+const handleImageChange = async (uploadFile) => {
   const rawFile = uploadFile.raw
   if (rawFile) {
     // 检查文件类型
@@ -134,15 +135,34 @@ const handleImageChange = (uploadFile) => {
       ElMessage.error('只能上传 JPG/PNG/GIF 格式的图片!')
       return
     }
-    
+
     // 检查文件大小 (限制为2MB)
     if (rawFile.size > 2 * 1024 * 1024) {
       ElMessage.error('图片大小不能超过 2MB!')
       return
     }
-    
-    // 生成预览URL
-    formData.imageUrl = URL.createObjectURL(rawFile)
+
+    try {
+      // 上传图片到服务器
+      const response = await uploadRoomImage(rawFile)
+      
+      // 检查上传结果
+      if (response.code === 0) {
+        // 上传成功，记录返回的URL
+        formData.imageUrl = response.data.url
+        ElMessage.success('图片上传成功')
+      } else {
+        // 上传失败
+        ElMessage.error(response.msg || '图片上传失败')
+        // 清除预览
+        formData.imageUrl = ''
+      }
+    } catch (error) {
+      // 网络错误或其他异常
+      ElMessage.error('图片上传失败: ' + (error.message || '网络错误'))
+      // 清除预览
+      formData.imageUrl = ''
+    }
   }
 }
 
@@ -183,8 +203,8 @@ onMounted(() => {
     formData.capacity = data.capacity
     formData.area = data.area || 50 // 如果没有面积数据，设置默认值
     formData.purpose = data.purpose
-    // 注意：图片URL需要从实际数据中获取
-    formData.imageUrl = '' // 这里应该设置实际的图片URL
+    // 从实际数据中获取图片URL
+    formData.imageUrl = data.imageUrl || ''
   }
 })
 </script>
