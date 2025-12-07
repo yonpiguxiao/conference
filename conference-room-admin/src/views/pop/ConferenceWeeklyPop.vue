@@ -133,6 +133,13 @@ const tableData = computed(() => {
         const startDateTime = new Date(reservation.starts_at);
         const endDateTime = new Date(reservation.ends_at);
         
+        // 获取预约日期
+        const reservationStartDate = new Date(startDateTime.getFullYear(), startDateTime.getMonth(), startDateTime.getDate());
+        const reservationEndDate = new Date(endDateTime.getFullYear(), endDateTime.getMonth(), endDateTime.getDate());
+        
+        // 获取当前处理的日期
+        const currentDayDate = new Date(day.date);
+        
         // 处理时区问题，确保时间正确
         const startHour = startDateTime.getHours();
         const startMinute = startDateTime.getMinutes();
@@ -147,18 +154,17 @@ const tableData = computed(() => {
           const slotEndHour = slotStartMinute === 30 ? slotStartHour + 1 : slotStartHour;
           const slotEndMinute = slotStartMinute === 30 ? 0 : 30;
           
-          // 更精确的时间重叠判断
-          const slotStartTotalMinutes = slotStartHour * 60 + slotStartMinute;
-          const slotEndTotalMinutes = slotEndHour * 60 + slotEndMinute;
-          const reservationStartTotalMinutes = startHour * 60 + startMinute;
-          const reservationEndTotalMinutes = endHour * 60 + endMinute;
+          // 构造当前时间段的完整日期时间
+          const slotStartDate = new Date(currentDayDate);
+          slotStartDate.setHours(slotStartHour, slotStartMinute, 0, 0);
+          const slotEndDate = new Date(currentDayDate);
+          slotEndDate.setHours(slotEndHour, slotEndMinute, 0, 0);
           
-          // 判断是否有时间重叠（包含、交叉等情况）
-          // 当预约时间包含时间段或预约时间和时间段有交叉，都标为booked
-          // 重叠条件：预约开始时间早于时间段结束时间 且 预约结束时间晚于时间段开始时间
-          if (reservationStartTotalMinutes < slotEndTotalMinutes && reservationEndTotalMinutes > slotStartTotalMinutes) {
+          // 判断预约时间是否覆盖当前时间段
+          // 条件：预约开始时间早于时间段结束时间 且 预约结束时间晚于时间段开始时间
+          if (startDateTime < slotEndDate && endDateTime > slotStartDate) {
             slot.status[dayIndex] = 'booked';
-            console.log(`标记为已预约: ${slot.time} 在第 ${dayIndex + 1} 天`);
+            console.log(`标记为已预约: ${slot.time} 在 ${day.date}`);
           }
         });
       });
