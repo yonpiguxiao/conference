@@ -105,7 +105,6 @@ export default {
     const confirm = async () => {
       formRef.value.validate(async (valid) => {
         if (valid) {
-          const response = null
           try {
             // 获取当前用户信息
             const userResponse = await getCurrentUser()
@@ -123,7 +122,7 @@ export default {
             }
             
             // 调用创建预约接口
-            response = await createAppointment(appointmentData)
+            const response = await createAppointment(appointmentData)
             console.log('预约响应:', response)
             // 根据返回结果展示提示
             if (response.code === 0) {

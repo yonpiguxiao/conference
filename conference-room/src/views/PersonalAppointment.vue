@@ -28,9 +28,18 @@
     
     <!-- 预约详情弹窗 -->
     <AppointmentInfoPop 
-      v-model:visible="detailVisible" 
+      :visible="detailVisible" 
       :appointment-id="currentAppointmentId"
+      @update:visible="detailVisible = $event"
       @success="handleDetailSuccess"
+    />
+    
+    <!-- 取消预约弹窗 -->
+    <CancelAppointmentPop
+      :visible="cancelVisible"
+      :appointment-id="currentAppointmentId"
+      @update:visible="cancelVisible = $event"
+      @success="handleCancelSuccess"
     />
   </div>
 </template>
@@ -40,11 +49,13 @@ import { getCurrentUser } from '@/api/user.js'
 import { getAppointmentList } from '@/api/appointment.js'
 import { formatDateTime } from '@/utils/date.js'
 import AppointmentInfoPop from '@/views/pop/AppointmentInfoPop.vue'
+import CancelAppointmentPop from '@/views/pop/CancelAppointmentPop.vue'
 
 export default {
   name: 'PersonalAppointment',
   components: {
-    AppointmentInfoPop
+    AppointmentInfoPop,
+    CancelAppointmentPop
   },
   data() {
     return {
@@ -52,6 +63,7 @@ export default {
       loading: false,
       userId: null,
       detailVisible: false,
+      cancelVisible: false,
       currentAppointmentId: null
     }
   },
@@ -173,10 +185,16 @@ export default {
      * @param {number} id - 预约ID
      */
     cancelAppointment(id) {
-      // 这里应该调用API取消预约
-      // 现在我们只是从前端移除
-      this.appointments = this.appointments.filter(app => app.id !== id);
-      alert(`预约已取消`);
+      this.currentAppointmentId = id
+      this.cancelVisible = true
+    },
+    
+    /** 
+     * 处理取消预约成功事件
+     */
+    handleCancelSuccess() {
+      // 重新获取预约列表
+      this.fetchAppointments()
     }
   }
 }

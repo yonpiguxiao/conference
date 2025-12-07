@@ -38,3 +38,14 @@ export function updateAppointment(id, data) {
     data
   })
 }
+
+/**
+ * 取消预约
+ */
+export function cancelAppointment(id, data) {
+  return request({
+    url: `/reservations/${id}/cancel`,
+    method: 'post',
+    data
+  })
+}
