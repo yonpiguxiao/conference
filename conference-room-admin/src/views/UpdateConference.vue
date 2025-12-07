@@ -217,7 +217,7 @@ const handleSubmit = async () => {
           roomNumber: formData.roomNumber,
           capacity: formData.capacity,
           areaSqm: formData.area.toString(),
-          purpose: formData.purpose,
+          purpose: formData.purpose || null,
           description: formData.description,
           status: formData.status,
           location: formData.location || null,
@@ -236,13 +236,13 @@ const handleSubmit = async () => {
         // 检查响应结果
         if (response.code === 0) {
           // 显示成功消息
-          ElMessage.success(isAddMode.value ? '新增会议室成功' : '编辑会议室成功')
+          ElMessage.success(isAddMode.value ? '新增会议室成功' : '更新成功')
           
           // 返回会议室管理页面
           router.push({ name: 'conference' })
         } else {
           // 显示错误消息
-          ElMessage.error(response.msg || (isAddMode.value ? '新增会议室失败' : '编辑会议室失败'))
+          ElMessage.error(response.msg || (isAddMode.value ? '新增会议室失败' : '更新失败'))
         }
       } catch (error) {
         // 网络错误或其他异常
