@@ -8,8 +8,8 @@
     <el-form :model="form" label-width="80px">
       <el-form-item label="审批结果">
         <el-select v-model="form.approvalResult" placeholder="请选择审批结果" @change="onApprovalChange">
-          <el-option label="同意" value="agree"></el-option>
-          <el-option label="驳回" value="reject"></el-option>
+<el-option label="通过" value="approved"></el-option>
+<el-option label="驳回" value="rejected"></el-option>
         </el-select>
       </el-form-item>
       
@@ -45,12 +45,12 @@ const form = reactive({
 
 // 是否显示驳回理由输入框
 const showRejectReason = computed(() => {
-  return form.approvalResult === 'reject'
+  return form.approvalResult === 'rejected'
 })
 
 // 审批选项改变时的处理
 const onApprovalChange = (value) => {
-  if (value !== 'reject') {
+  if (value !== 'rejected') {
     form.rejectReason = ''
   }
 }
@@ -71,7 +71,7 @@ const handleConfirm = () => {
     return
   }
   
-  if (form.approvalResult === 'reject' && !form.rejectReason.trim()) {
+  if (form.approvalResult === 'rejected' && !form.rejectReason.trim()) {
     ElMessage.warning('请输入驳回理由')
     return
   }

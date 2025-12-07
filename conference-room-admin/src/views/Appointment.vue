@@ -199,23 +199,19 @@ const handleApprovalConfirm = async (approvalData) => {
   try {
     // 调用API提交审批结果
     const payload = {
-      action: approvalData.approvalResult === 'agree' ? 'approve' : 'reject',
-      ...(approvalData.approvalResult === 'reject' && { reason: approvalData.rejectReason })
+      action: approvalData.approvalResult,
+      comment: approvalData.approvalResult === 'approved' ? null : approvalData.rejectReason
     }
     
     await approve(currentAppointment.value.id, payload)
     
     // 更新预约列表中的状态
     if (currentAppointment.value) {
-      if (approvalData.approvalResult === 'agree') {
-        currentAppointment.value.status = 'approved'
-      } else if (approvalData.approvalResult === 'reject') {
-        currentAppointment.value.status = 'rejected'
-      }
+      currentAppointment.value.status = approvalData.approvalResult
     }
     
     // 显示成功消息
-    ElMessage.success('审批成功')
+    ElMessage.success('审批操作成功')
   } catch (error) {
     console.error('审批失败:', error)
     ElMessage.error('审批失败: ' + (error.message || '未知错误'))
