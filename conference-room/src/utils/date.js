@@ -24,6 +24,20 @@ export function formatDateTime(dateString) {
 }
 
 /**
+ * 格式化日期时间为 ISO 8601 格式 (yyyy-mm-ddThh:mm:ss.sss)
+ * @param {string|Date} dateString - 日期字符串或Date对象
+ * @returns {string} 格式化后的ISO 8601日期时间字符串
+ */
+export function formatISODateTime(dateString) {
+  if (!dateString) return ''
+  
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return '' // 无效日期
+  
+  return date.toISOString()
+}
+
+/**
  * 格式化日期为 yyyy-mm-dd 格式
  * @param {string|Date} dateString - 日期字符串或Date对象
  * @returns {string} 格式化后的日期字符串

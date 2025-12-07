@@ -75,6 +75,7 @@
 import { ref, reactive, defineProps, defineEmits, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getAppointmentDetail, updateAppointment } from '@/api/appointment'
+import { formatISODateTime } from '@/utils/date'
 
 // 定义props
 const props = defineProps({
@@ -163,13 +164,17 @@ const handleSubmit = async () => {
   try {
     await formRef.value.validate()
     
+    // 格式化时间字段
+    const formattedStartsAt = formatISODateTime(formData.startsAt)
+    const formattedEndsAt = formatISODateTime(formData.endsAt)
+    
     // 调用更新接口
     await updateAppointment(props.appointmentId, {
-      startsAt: formData.startsAt,
-      endsAt: formData.endsAt,
       title: formData.title,
       description: formData.description,
-      attendeesCount: formData.attendeesCount
+      attendeesCount: formData.attendeesCount,
+      startsAt: formattedStartsAt,
+      endsAt: formattedEndsAt
     })
     
     ElMessage.success('更新成功')
