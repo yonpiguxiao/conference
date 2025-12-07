@@ -65,7 +65,7 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150">
+        <el-table-column label="操作" width="210">
           <template #default="scope">
             <el-button size="small" @click="handleViewWeekly(scope.row)">周视图</el-button>
             <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
@@ -310,7 +310,7 @@ onMounted(() => {
 
 .search-form {
   .el-form-item {
-    margin-right: 20px;
+    margin-right: 20px;  
   }
 }
 
