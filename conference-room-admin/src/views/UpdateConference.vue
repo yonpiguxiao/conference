@@ -107,7 +107,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { uploadRoomImage, createRoom, updateRoom } from '@/api/room'
+import { uploadRoomImage, createRoom, updateRoom, getRoomById } from '@/api/room'
 
 const route = useRoute()
 const router = useRouter()
@@ -261,21 +261,38 @@ const handleCancel = () => {
 }
 
 // 组件挂载时初始化数据
-onMounted(() => {
-  // 如果是编辑模式，初始化表单数据
-  if (!isAddMode.value && route.state?.conferenceData) {
-    const data = route.state.conferenceData
-    formData.id = data.id
-    formData.name = data.name
-    formData.roomNumber = data.roomNumber
-    formData.capacity = data.capacity
-    formData.area = data.area || 50 // 如果没有面积数据，设置默认值
-    formData.purpose = data.purpose
-    formData.description = data.description || ''
-    formData.status = data.status || 'bookable'
-    formData.location = data.location || ''
-    // 从实际数据中获取图片URL
-    formData.imageUrl = data.imageUrl || ''
+onMounted(async () => {
+  // 调试信息
+  console.log('Route:', route)
+  console.log('Route query:', route.query)
+  console.log('Is add mode:', isAddMode.value)
+  
+  // 如果是编辑模式，根据ID获取会议室详情
+  if (!isAddMode.value && route.query.id) {
+    try {
+      const response = await getRoomById(route.query.id)
+      console.log('Get room by id response:', response)
+      
+      if (response.code === 0) {
+        const data = response.data
+        formData.id = data.id
+        formData.name = data.name
+        formData.roomNumber = data.roomNumber
+        formData.capacity = data.capacity
+        formData.area = data.areaSqm ? parseFloat(data.areaSqm) : 50
+        formData.purpose = data.purpose
+        formData.description = data.description || ''
+        formData.status = data.status || 'bookable'
+        formData.location = data.location || ''
+        // 从实际数据中获取图片URL
+        formData.imageUrl = data.url || ''
+      } else {
+        ElMessage.error(response.msg || '获取会议室详情失败')
+      }
+    } catch (error) {
+      console.error('获取会议室详情失败:', error)
+      ElMessage.error('获取会议室详情失败: ' + error.message)
+    }
   }
 })
 </script>

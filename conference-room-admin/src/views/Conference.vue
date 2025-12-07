@@ -140,32 +140,12 @@ const handleAdd = () => {
 }
 
 // 编辑功能
-const handleEdit = async (row) => {
-  try {
-    // 调用接口获取会议室详情
-    const response = await getRoomById(row.id)
-    
-    if (response.code === 0) {
-      // 转换数据格式以匹配编辑页面的字段
-      const convertedData = {
-        ...response.data,
-        area: response.data.areaSqm ? parseFloat(response.data.areaSqm) : 50,
-        imageUrl: response.data.url || ''
-      };
-      
-      // 将获取到的数据传递给编辑页面
-      router.push({ 
-        name: 'update-conference', 
-        query: { mode: 'edit', id: row.id }, 
-        state: { conferenceData: convertedData } 
-      })
-    } else {
-      ElMessage.error(response.msg || '获取会议室详情失败')
-    }
-  } catch (error) {
-    console.error('获取会议室详情失败:', error)
-    ElMessage.error('获取会议室详情失败: ' + error.message)
-  }
+const handleEdit = (row) => {
+  // 直接跳转到编辑页面，通过查询参数传递ID
+  router.push({ 
+    name: 'update-conference', 
+    query: { mode: 'edit', id: row.id }
+  })
 }
 
 // 删除功能
