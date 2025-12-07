@@ -71,9 +71,10 @@
           </div>
         </div>
         
-        <!-- 审批按钮（仅对未审批的预约显示） -->
-        <div v-if="appointment.status === 'pending'" class="approval-button">
-          <el-button type="primary" size="small" @click="openApprovalDialog(appointment)">审批</el-button>
+        <!-- 操作按钮 -->
+        <div class="action-buttons">
+          <el-button type="primary" size="small" @click="openDetailDialog(appointment)">详情</el-button>
+          <el-button v-if="appointment.status === 'pending'" type="success" size="small" @click="openApprovalDialog(appointment)">审批</el-button>
         </div>
       </div>
     </div>
@@ -93,11 +94,18 @@
   
   <!-- 审批预约弹窗 -->
   <ApproveAppointmentPop v-model:visible="approvalDialogVisible" @confirm="handleApprovalConfirm" />
+  
+  <!-- 详情弹窗 -->
+  <AppointmentInfoPop 
+    v-model="detailDialogVisible" 
+    :appointment-id="currentAppointmentId" 
+  />
 </template>
 
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
 import ApproveAppointmentPop from './ApproveAppointmentPop.vue'
+import AppointmentInfoPop from './pop/AppointmentInfoPop.vue'
 import { getAppointmentList, approve } from '@/api/appointment'
 import { formatDateTime } from '@/utils/date'
 import { ElMessage } from 'element-plus'
@@ -118,6 +126,12 @@ const pagination = reactive({
 
 // 控制审批弹窗显示
 const approvalDialogVisible = ref(false)
+
+// 控制详情弹窗显示
+const detailDialogVisible = ref(false)
+
+// 当前正在查看的预约ID
+const currentAppointmentId = ref(null)
 
 // 当前正在审批的预约
 const currentAppointment = ref(null)
@@ -163,6 +177,12 @@ const getStatusText = (status) => {
     default:
       return status
   }
+}
+
+// 打开详情弹窗
+const openDetailDialog = (appointment) => {
+  currentAppointmentId.value = appointment.id
+  detailDialogVisible.value = true
 }
 
 // 打开审批弹窗
@@ -357,8 +377,10 @@ onMounted(() => {
   }
 }
 
-.approval-button {
+.action-buttons {
   flex: 0 0 auto;
+  display: flex;
+  gap: 10px;
 }
 
 .pagination-container {
