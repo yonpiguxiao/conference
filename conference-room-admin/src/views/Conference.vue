@@ -96,7 +96,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getRoomPage } from '@/api/room.js'
+import { getRoomPage, setRoomStatus } from '@/api/room.js'
 import { ElMessage } from 'element-plus'
 import examImage from '@/assets/images/exam.png'
 
@@ -151,9 +151,31 @@ const handleDelete = (row) => {
 }
 
 // 状态切换
-const handleStatusChange = (row) => {
-  console.log('状态切换:', row)
-  // 这里应该调用API更新状态
+const handleStatusChange = async (row) => {
+  try {
+    // 准备请求参数
+    const statusData = {
+      newStatus: row.status === 1 ? 'bookable' : 'unbookable',
+      note: null
+    };
+    
+    // 调用API更新状态
+    const response = await setRoomStatus(row.id, statusData);
+    
+    if (response.code === 0) {
+      // 更新成功，显示提示弹窗
+      ElMessage.success('会议室状态更新成功');
+    } else {
+      // 更新失败，回滚状态并显示错误信息
+      row.status = row.status === 1 ? 0 : 1;
+      ElMessage.error(response.msg || '状态更新失败');
+    }
+  } catch (error) {
+    // 请求异常，回滚状态并显示错误信息
+    row.status = row.status === 1 ? 0 : 1;
+    console.error('状态更新失败:', error);
+    ElMessage.error('状态更新失败: ' + error.message);
+  }
 }
 
 // 分页功能

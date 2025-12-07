@@ -23,3 +23,38 @@ export function getRoomById(id) {
     method: 'get'
   })
 }
+
+// 新增会议室（管理员）
+export function createRoom(room) {
+  return request({
+    url: '/rooms',
+    method: 'post',
+    data: room
+  })
+}
+
+// 更新会议室（管理员）
+export function updateRoom(id, room) {
+  return request({
+    url: `/rooms/${id}`,
+    method: 'put',
+    data: room
+  })
+}
+
+// 删除会议室（管理员）
+export function deleteRoom(id) {
+  return request({
+    url: `/rooms/${id}`,
+    method: 'delete'
+  })
+}
+
+// 设置会议室状态（管理员）
+export function setRoomStatus(id, statusData) {
+  return request({
+    url: `/rooms/${id}/status`,
+    method: 'put',
+    data: statusData
+  })
+}
