@@ -96,8 +96,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getRoomPage, setRoomStatus, getRoomById } from '@/api/room.js'
-import { ElMessage } from 'element-plus'
+import { getRoomPage, setRoomStatus, getRoomById, deleteRoom } from '@/api/room.js'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import examImage from '@/assets/images/exam.png'
 
 const router = useRouter()
@@ -150,8 +150,36 @@ const handleEdit = (row) => {
 
 // 删除功能
 const handleDelete = (row) => {
-  console.log('删除会议室:', row)
-  // 这里应该调用API删除数据
+  ElMessageBox.confirm(
+    `确定要删除会议室 "${row.name}" 吗？此操作不可恢复。`,
+    '确认删除',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  ).then(async () => {
+    try {
+      // 调用API删除会议室
+      const response = await deleteRoom(row.id);
+      if (response.code === 0) {
+        // 删除成功，显示提示信息
+        ElMessage.success('删除成功');
+        // 重新获取数据
+        await fetchRoomData();
+      } else {
+        // 删除失败，显示错误信息
+        ElMessage.error(response.msg || '删除失败');
+      }
+    } catch (error) {
+      // 请求异常，显示错误信息
+      console.error('删除失败:', error);
+      ElMessage.error('删除失败: ' + error.message);
+    }
+  }).catch(() => {
+    // 用户取消删除
+    ElMessage.info('已取消删除');
+  });
 }
 
 // 状态切换
