@@ -54,6 +54,29 @@
           />
         </el-form-item>
 
+        <!-- 描述 -->
+        <el-form-item label="描述" prop="description">
+          <el-input
+            v-model="formData.description"
+            type="textarea"
+            placeholder="请输入会议室描述"
+            :rows="3"
+          />
+        </el-form-item>
+
+        <!-- 状态 -->
+        <el-form-item label="状态" prop="status">
+          <el-select v-model="formData.status" placeholder="请选择状态">
+            <el-option label="可预约" value="bookable" />
+            <el-option label="不可预约" value="unbookable" />
+          </el-select>
+        </el-form-item>
+
+        <!-- 地址 -->
+        <el-form-item label="地址" prop="location">
+          <el-input v-model="formData.location" placeholder="请输入会议室地址" />
+        </el-form-item>
+
         <!-- 照片 -->
         <el-form-item label="照片" prop="imageUrl">
           <el-upload
@@ -84,7 +107,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { uploadRoomImage } from '@/api/room'
+import { uploadRoomImage, createRoom, updateRoom } from '@/api/room'
 
 const route = useRoute()
 const router = useRouter()
@@ -103,6 +126,9 @@ const formData = reactive({
   capacity: 10,
   area: 50,
   purpose: '',
+  description: '',
+  status: 'bookable',
+  location: '',
   imageUrl: ''
 })
 
@@ -122,6 +148,15 @@ const formRules = {
   ],
   purpose: [
     { required: true, message: '请输入会议室用途', trigger: 'blur' }
+  ],
+  description: [
+    { required: false, message: '请输入会议室描述', trigger: 'blur' }
+  ],
+  status: [
+    { required: true, message: '请选择状态', trigger: 'change' }
+  ],
+  location: [
+    { required: false, message: '请输入会议室地址', trigger: 'blur' }
   ]
 }
 
@@ -170,16 +205,46 @@ const handleImageChange = async (uploadFile) => {
 const handleSubmit = async () => {
   if (!formRef.value) return
   
-  await formRef.value.validate((valid) => {
+  await formRef.value.validate(async (valid) => {
     if (valid) {
-      // 这里应该调用API保存数据
-      console.log('保存数据:', formData)
-      
-      // 显示成功消息
-      ElMessage.success(isAddMode.value ? '新增会议室成功' : '编辑会议室成功')
-      
-      // 返回会议室管理页面
-      router.push({ name: 'conference' })
+      try {
+        // 准备请求数据
+        const requestData = {
+          name: formData.name,
+          roomNumber: formData.roomNumber,
+          capacity: formData.capacity,
+          areaSqm: formData.area.toString(),
+          purpose: formData.purpose,
+          description: formData.description,
+          status: formData.status,
+          location: formData.location || null,
+          url: formData.imageUrl || null
+        }
+
+        let response
+        if (isAddMode.value) {
+          // 新增会议室
+          response = await createRoom(requestData)
+        } else {
+          // 编辑会议室
+          response = await updateRoom(formData.id, requestData)
+        }
+
+        // 检查响应结果
+        if (response.code === 0) {
+          // 显示成功消息
+          ElMessage.success(isAddMode.value ? '新增会议室成功' : '编辑会议室成功')
+          
+          // 返回会议室管理页面
+          router.push({ name: 'conference' })
+        } else {
+          // 显示错误消息
+          ElMessage.error(response.msg || (isAddMode.value ? '新增会议室失败' : '编辑会议室失败'))
+        }
+      } catch (error) {
+        // 网络错误或其他异常
+        ElMessage.error(isAddMode.value ? '新增会议室失败: ' + (error.message || '网络错误') : '编辑会议室失败: ' + (error.message || '网络错误'))
+      }
     } else {
       console.log('表单验证失败')
       return false
@@ -203,6 +268,9 @@ onMounted(() => {
     formData.capacity = data.capacity
     formData.area = data.area || 50 // 如果没有面积数据，设置默认值
     formData.purpose = data.purpose
+    formData.description = data.description || ''
+    formData.status = data.status || 'bookable'
+    formData.location = data.location || ''
     // 从实际数据中获取图片URL
     formData.imageUrl = data.imageUrl || ''
   }
