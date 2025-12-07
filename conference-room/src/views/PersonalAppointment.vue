@@ -17,6 +17,10 @@
             >
               取消预约
             </button>
+            <button v-if="canCheckin(appointment.status)" class="checkin-btn" @click="openCheckin(appointment.id)"
+            >
+              签到
+            </button>
           </div>
         </div>
       </div>
@@ -41,6 +45,14 @@
       @update:visible="cancelVisible = $event"
       @success="handleCancelSuccess"
     />
+    
+    <!-- 签到弹窗 -->
+    <CheckinPop
+      :visible="checkinVisible"
+      :appointment-id="currentAppointmentId"
+      @update:visible="checkinVisible = $event"
+      @success="handleCheckinSuccess"
+    />
   </div>
 </template>
 
@@ -50,12 +62,14 @@ import { getAppointmentList } from '@/api/appointment.js'
 import { formatDateTime } from '@/utils/date.js'
 import AppointmentInfoPop from '@/views/pop/AppointmentInfoPop.vue'
 import CancelAppointmentPop from '@/views/pop/CancelAppointmentPop.vue'
+import CheckinPop from '@/views/pop/CheckinPop.vue'
 
 export default {
   name: 'PersonalAppointment',
   components: {
     AppointmentInfoPop,
-    CancelAppointmentPop
+    CancelAppointmentPop,
+    CheckinPop
   },
   data() {
     return {
@@ -64,6 +78,7 @@ export default {
       userId: null,
       detailVisible: false,
       cancelVisible: false,
+      checkinVisible: false,
       currentAppointmentId: null
     }
   },
@@ -195,6 +210,32 @@ export default {
     handleCancelSuccess() {
       // 重新获取预约列表
       this.fetchAppointments()
+    },
+    
+    /** 
+     * 判断是否可以签到
+     * @param {string} status - 预约状态
+     * @returns {boolean}
+     */
+    canCheckin(status) {
+      return status === 'approved'
+    },
+    
+    /** 
+     * 打开签到弹窗
+     * @param {number} id - 预约ID
+     */
+    openCheckin(id) {
+      this.currentAppointmentId = id
+      this.checkinVisible = true
+    },
+    
+    /** 
+     * 处理签到成功事件
+     */
+    handleCheckinSuccess() {
+      // 重新获取预约列表
+      this.fetchAppointments()
     }
   }
 }
@@ -268,6 +309,21 @@ export default {
 
 .detail-btn:hover {
   background-color: #40a9ff;
+}
+
+.checkin-btn {
+  background-color: #52c41a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  margin-left: 10px;
+  font-size: 14px;
+}
+
+.checkin-btn:hover {
+  background-color: #73d13d;
 }
 
 .no-appointments {

@@ -9,6 +9,28 @@ export function createAppointment(data) {
   })
 }
 
+/**
+ * 生成签到二维码令牌（预约发起人或管理员）
+ */
+export function createCheckinToken(id, data) {
+  return request({
+    url: `/reservations/${id}/checkin-token`,
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 二维码签到（可匿名，建议登录）
+ */
+export function qrCheckin(data) {
+  return request({
+    url: '/checkins/qr',
+    method: 'post',
+    data
+  })
+}
+
 
 export function getAppointmentList(params) {
   return request({
