@@ -19,7 +19,7 @@ export function getRoomPage(page = 1, pageSize = 20, keyword = null, status = nu
 // 根据ID获取会议室详情
 export function getRoomById(id) {
   return request({
-    url: `/room/${id}`,
+    url: `/rooms/${id}`,
     method: 'get'
   })
 }

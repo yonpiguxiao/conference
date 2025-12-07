@@ -96,7 +96,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getRoomPage, setRoomStatus } from '@/api/room.js'
+import { getRoomPage, setRoomStatus, getRoomById } from '@/api/room.js'
 import { ElMessage } from 'element-plus'
 import examImage from '@/assets/images/exam.png'
 
@@ -140,8 +140,32 @@ const handleAdd = () => {
 }
 
 // 编辑功能
-const handleEdit = (row) => {
-  router.push({ name: 'update-conference', query: { mode: 'edit', id: row.id }, state: { conferenceData: row } })
+const handleEdit = async (row) => {
+  try {
+    // 调用接口获取会议室详情
+    const response = await getRoomById(row.id)
+    
+    if (response.code === 0) {
+      // 转换数据格式以匹配编辑页面的字段
+      const convertedData = {
+        ...response.data,
+        area: response.data.areaSqm ? parseFloat(response.data.areaSqm) : 50,
+        imageUrl: response.data.url || ''
+      };
+      
+      // 将获取到的数据传递给编辑页面
+      router.push({ 
+        name: 'update-conference', 
+        query: { mode: 'edit', id: row.id }, 
+        state: { conferenceData: convertedData } 
+      })
+    } else {
+      ElMessage.error(response.msg || '获取会议室详情失败')
+    }
+  } catch (error) {
+    console.error('获取会议室详情失败:', error)
+    ElMessage.error('获取会议室详情失败: ' + error.message)
+  }
 }
 
 // 删除功能
