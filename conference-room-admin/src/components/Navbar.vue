@@ -2,38 +2,62 @@
   <div class="navbar">
     <div class="nav-links">
       <router-link to="/home/conference" class="nav-link" active-class="active">
-        会议室管理
+        会议室预约
       </router-link>
-      <router-link to="/home/appointment" class="nav-link" active-class="active">
-        预约管理
+      <router-link to="/home/personal-appointment" class="nav-link" active-class="active">
+        个人预约
       </router-link>
     </div>
     <div class="user-info" @mouseenter="showDropdown = true" @mouseleave="showDropdown = false">
       <img :src="headImage" alt="用户头像" class="user-avatar" />
-      <span class="user-name">管理员</span>
+      <span class="user-name">{{ username || '测试用户' }}</span>
       <div v-if="showDropdown" class="dropdown-menu">
-        <router-link to="/login" class="dropdown-item">登录</router-link>
-        <a href="#" class="dropdown-item" @click.prevent="logout">退出登录</a>
+        <router-link v-if="!token" to="/login" class="dropdown-item">登录</router-link>
+        <a v-if="token" href="#" class="dropdown-item" @click.prevent="logout">退出登录</a>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import headImage from '@/assets/images/head_image.png'
+import { getCurrentUser } from '@/api/user.js'
+import { getToken, removeToken } from '@/utils/cookie.js'
 
 const showDropdown = ref(false)
 const router = useRouter()
+const username = ref('')
+const token = ref(getToken())
+
+// 获取当前用户信息
+const fetchCurrentUser = async () => {
+  token.value = getToken()
+  if (token.value) {
+    try {
+      const response = await getCurrentUser()
+      if (response.code === 0) {
+        username.value = response.data.username
+      }
+    } catch (error) {
+      console.error('获取用户信息失败:', error)
+    }
+  }
+}
 
 const logout = () => {
   // 在实际应用中，这里会清除用户的认证状态
   // 例如：localStorage.removeItem('token')
-  
+  removeToken()
   // 跳转到登录页面
   router.push('/login')
 }
+
+// 组件挂载时获取用户信息
+onMounted(() => {
+  fetchCurrentUser()
+})
 </script>
 
 <style scoped>

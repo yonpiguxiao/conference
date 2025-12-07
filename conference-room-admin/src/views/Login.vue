@@ -28,6 +28,10 @@
 </template>
 
 <script>
+import { login } from '@/api/user'
+import { setToken, getToken } from '@/utils/cookie'
+import { ElMessage } from 'element-plus'
+
 export default {
   name: 'Login',
   data() {
@@ -39,10 +43,41 @@ export default {
     }
   },
   methods: {
-    handleLogin() {
-      // 登录逻辑可以在这里实现
-      console.log('登录信息:', this.loginForm);
-      // 这里可以添加实际的登录验证逻辑
+    async handleLogin() {
+      // 检查用户名和密码是否为空
+      if (!this.loginForm.username || !this.loginForm.password) {
+        ElMessage.error('请输入用户名和密码')
+        return
+      }
+      
+      try {
+        // 调用登录接口
+        const response = await login({
+          username: this.loginForm.username,
+          password: this.loginForm.password
+        })
+        
+        // 检查返回结果
+        if (response.code === 0) {
+          // 存储token
+          setToken(response.data.token)
+          
+          // 检查token是否存在
+          const token = getToken()
+          if (!token) {
+            ElMessage.error('Token不存在，请重新登录')
+            return
+          }
+          
+          // 登录成功跳转
+          this.$router.push('/home/conference')
+          ElMessage.success('登录成功')
+        } else {
+          ElMessage.error(response.msg || '登录失败')
+        }
+      } catch (error) {
+        ElMessage.error('登录请求失败: ' + error.message)
+      }
     }
   }
 }
