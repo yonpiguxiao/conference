@@ -180,11 +180,14 @@ const handleImageChange = async (uploadFile) => {
     try {
       // 上传图片到服务器
       const response = await uploadRoomImage(rawFile)
-      
+      console.log(response)
       // 检查上传结果
       if (response.code === 0) {
-        // 上传成功，记录返回的URL
-        formData.imageUrl = response.data.url
+        // 上传成功，记录返回的URL，并将端口号改为8080
+        let url = response.data.url
+        // 使用正则表达式替换端口号为8080
+        url = url.replace(/(http:\/\/[^:]+:)\d+(\/.*)/, '$18080$2')
+        formData.imageUrl = url
         ElMessage.success('图片上传成功')
       } else {
         // 上传失败
