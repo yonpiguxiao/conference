@@ -110,49 +110,23 @@
     </div>
     
     <!-- 新增/编辑对话框 -->
-    <el-dialog :title="dialogStatus==='create'?'新增用户':'编辑用户'" v-model="dialogFormVisible">
-      <el-form
-        ref="dataForm"
-        :rules="rules"
-        :model="temp"
-        label-position="left"
-        label-width="100px"
-        style="width: 400px; margin-left:50px;"
-      >
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="temp.username" />
-        </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input v-model="temp.password" type="password" />
-        </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="temp.email" />
-        </el-form-item>
-        <el-form-item label="角色" prop="role">
-          <el-select v-model="temp.role" class="filter-item" placeholder="请选择">
-            <el-option v-for="item in roles" :key="item" :label="item" :value="item" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="dialogFormVisible = false">
-            取消
-          </el-button>
-          <el-button type="primary" @click="dialogStatus==='create'?createData():updateData()">
-            确认
-          </el-button>
-        </div>
-      </template>
-    </el-dialog>
+    <UpdateUserPop 
+      v-model="dialogFormVisible" 
+      :user-id="temp.id"
+      @success="handleUpdateUserSuccess"
+    />
   </div>
 </template>
 
 <script>
-import { listUsers as fetchList, createUser, updateUser, deleteUser } from '@/api/user'
+import { listUsers as fetchList, deleteUser } from '@/api/user'
+import UpdateUserPop from '@/views/pop/UpdateUserPop.vue'
 
 export default {
   name: 'CUser',
+  components: {
+    UpdateUserPop
+  },
   data() {
     return {
       list: null,
@@ -172,14 +146,7 @@ export default {
         role: ''
       },
       dialogFormVisible: false,
-      dialogStatus: '',
-      rules: {
-        username: [{ required: true, message: '用户名不能为空', trigger: 'change' }],
-        password: [{ required: true, message: '密码不能为空', trigger: 'change' }],
-        email: [{ required: true, message: '邮箱不能为空', trigger: 'change' }],
-        role: [{ required: true, message: '角色不能为空', trigger: 'change' }]
-      },
-      roles: ['admin', 'user']
+      dialogStatus: ''
     }
   },
   created() {
@@ -234,19 +201,11 @@ export default {
     },
     handleCreate() {
       this.resetTemp()
-      this.dialogStatus = 'create'
       this.dialogFormVisible = true
-      this.$nextTick(() => {
-        this.$refs['dataForm'].clearValidate()
-      })
     },
     handleUpdate(row) {
       this.temp = Object.assign({}, row)
-      this.dialogStatus = 'update'
       this.dialogFormVisible = true
-      this.$nextTick(() => {
-        this.$refs['dataForm'].clearValidate()
-      })
     },
     handleDelete(row) {
       this.$confirm('确认删除该用户?', '提示', {
@@ -263,34 +222,9 @@ export default {
         })
       })
     },
-    createData() {
-      this.$refs['dataForm'].validate((valid) => {
-        if (valid) {
-          createUser(this.temp).then(() => {
-            this.dialogFormVisible = false
-            this.$message({
-              message: '创建成功',
-              type: 'success'
-            })
-            this.getList()
-          })
-        }
-      })
-    },
-    updateData() {
-      this.$refs['dataForm'].validate((valid) => {
-        if (valid) {
-          const tempData = Object.assign({}, this.temp)
-          updateUser(tempData.id, tempData).then(() => {
-            this.dialogFormVisible = false
-            this.$message({
-              message: '更新成功',
-              type: 'success'
-            })
-            this.getList()
-          })
-        }
-      })
+    // 处理用户更新成功后的回调
+    handleUpdateUserSuccess() {
+      this.getList() // 刷新用户列表
     },
     resetTemp() {
       this.temp = {
@@ -323,15 +257,6 @@ export default {
   background-color: #fff;
   border-radius: 4px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
-.conference-container {
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 4px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-}
-.filter-container {
-  margin-bottom: 20px;
 }
 
 .pagination-container {
