@@ -28,6 +28,11 @@ const router = createRouter({
           name: 'update-conference',
           component: () => import('@/views/UpdateConference.vue'),
         },
+        {
+          path: 'user',
+          name: 'user',
+          component: () => import('@/views/CUser.vue'),
+        },
       ]
     },
     {
